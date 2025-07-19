@@ -1,0 +1,284 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+local function getCountryFlag()
+	local country = (player.LocaleId):split("-")[2] or "SA"
+	local flags = {
+		SA = "🇸🇦", EG = "🇪🇬", AE = "🇦🇪", IQ = "🇮🇶", JO = "🇯🇴",
+		MR = "🇲🇷", MA = "🇲🇦", OM = "🇴🇲", PS = "🇵🇸", QA = "🇶🇦",
+		SY = "🇸🇾", TN = "🇹🇳", YE = "🇾🇪", SD = "🇸🇩", KW = "🇰🇼",
+		DZ = "🇩🇿", BH = "🇧🇭", LB = "🇱🇧"
+	}
+	return flags[country] or "🌍"
+end
+
+-- إنشاء واجهة
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "YazanScript"
+gui.ResetOnSpawn = false
+
+-- شاشة تحميل
+local loadingFrame = Instance.new("Frame", gui)
+loadingFrame.Size = UDim2.new(0.3, 0, 0.1, 0)
+loadingFrame.Position = UDim2.new(0.35, 0, 0.45, 0)
+loadingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+loadingFrame.ClipsDescendants = true
+loadingFrame.BorderSizePixel = 0
+Instance.new("UICorner", loadingFrame).CornerRadius = UDim.new(0, 10)
+
+local loadingText = Instance.new("TextLabel", loadingFrame)
+loadingText.Size = UDim2.new(1, 0, 0.6, 0)
+loadingText.Position = UDim2.new(0, 0, 0, 0)
+loadingText.BackgroundTransparency = 1
+loadingText.TextColor3 = Color3.new(1, 1, 1)
+loadingText.Font = Enum.Font.GothamBold
+loadingText.TextScaled = true
+loadingText.Text = "منور السكربت: 0٪"
+
+local barBack = Instance.new("Frame", loadingFrame)
+barBack.Size = UDim2.new(0.9, 0, 0.3, 0)
+barBack.Position = UDim2.new(0.05, 0, 0.65, 0)
+barBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+barBack.ClipsDescendants = true
+Instance.new("UICorner", barBack).CornerRadius = UDim.new(0, 8)
+
+local barFill = Instance.new("Frame", barBack)
+barFill.Size = UDim2.new(0, 0, 1, 0)
+barFill.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+Instance.new("UICorner", barFill).CornerRadius = UDim.new(0, 8)
+
+-- تحديث العداد والبار تدريجياً
+spawn(function()
+	for i = 0, 100 do
+		loadingText.Text = ("منور السكربت: %d٪"):format(i)
+		barFill.Size = UDim2.new(i / 100, 0, 1, 0)
+		wait(0.05)
+	end
+	loadingFrame:Destroy()
+	main.Visible = true
+end)
+
+-- الإطار الرئيسي
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 320, 0, 280)
+main.Position = UDim2.new(0.05, 0, 0.3, 0)
+main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+main.Active = true
+main.Draggable = true
+main.Visible = false
+Instance.new("UICorner", main)
+
+-- زر الإغلاق (X)
+local closeBtn = Instance.new("TextButton", main)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "X"
+closeBtn.TextScaled = true
+closeBtn.AutoButtonColor = true
+closeBtn.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+Instance.new("UICorner", closeBtn)
+
+-- صورة اللاعب
+local thumb = Instance.new("ImageLabel", main)
+thumb.Size = UDim2.new(0, 60, 0, 60)
+thumb.Position = UDim2.new(0, 10, 0, 10)
+thumb.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+thumb.BackgroundTransparency = 1
+Instance.new("UICorner", thumb)
+
+-- اسم اللاعب مع العلم
+local nameLabel = Instance.new("TextLabel", main)
+nameLabel.Position = UDim2.new(0, 80, 0, 15)
+nameLabel.Size = UDim2.new(0, 230, 0, 25)
+nameLabel.Text = "👤 " .. player.Name .. " | " .. getCountryFlag()
+nameLabel.BackgroundTransparency = 1
+nameLabel.TextColor3 = Color3.new(1, 1, 1)
+nameLabel.TextScaled = true
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- آيدي اللاعب
+local idLabel = Instance.new("TextLabel", main)
+idLabel.Position = UDim2.new(0, 80, 0, 45)
+idLabel.Size = UDim2.new(0, 230, 0, 20)
+idLabel.Text = "🆔 ID: " .. player.UserId
+idLabel.BackgroundTransparency = 1
+idLabel.TextColor3 = Color3.new(1, 1, 1)
+idLabel.TextScaled = true
+idLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- أزرار القوائم
+local menuButtons = {"الخصائص", "ESP", "حقوق"}
+local contentFrames = {}
+local currentFrame = nil
+
+for i, name in ipairs(menuButtons) do
+	local btn = Instance.new("TextButton", main)
+	btn.Size = UDim2.new(0, 90, 0, 30)
+	btn.Position = UDim2.new(0, 10 + (i - 1) * 100, 0, 80)
+	btn.Text = name
+	btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextScaled = true
+	btn.AutoButtonColor = true
+	btn.Name = "MenuBtn_" .. name
+	btn.MouseButton1Click:Connect(function()
+		if currentFrame then currentFrame.Visible = false end
+		contentFrames[name].Visible = true
+		currentFrame = contentFrames[name]
+		-- تفعيل لون الزر المختار فقط
+		for _, b in pairs(main:GetChildren()) do
+			if b:IsA("TextButton") and b.Name:find("MenuBtn_") then
+				b.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+			end
+		end
+		btn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+	end)
+end
+
+-- إطار المحتوى الرئيسي
+local contentHolder = Instance.new("Frame", main)
+contentHolder.Position = UDim2.new(0, 0, 0, 120)
+contentHolder.Size = UDim2.new(1, 0, 1, -120)
+contentHolder.BackgroundTransparency = 1
+contentHolder.ClipsDescendants = true
+
+-- دالة إنشاء زر تفعيل/إيقاف
+local function createToggle(name, parent, onActivate)
+	local state = false
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(0.9, 0, 0, 35)
+	btn.Position = UDim2.new(0.05, 0, 0, (#parent:GetChildren()-1) * 40)
+	btn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Text = name .. ": Off"
+	btn.Font = Enum.Font.GothamBold
+	btn.TextScaled = true
+	btn.AutoButtonColor = true
+	btn.ClipsDescendants = true
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.Text = name .. (state and ": On" or ": Off")
+		btn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+		onActivate(state)
+	end)
+	return btn
+end
+
+-- قائمة الخصائص ScrollFrame
+local propFrame = Instance.new("ScrollingFrame", contentHolder)
+propFrame.Size = UDim2.new(1, 0, 1, 0)
+propFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- سنعدّلها لاحقاً
+propFrame.ScrollBarThickness = 6
+propFrame.BackgroundTransparency = 1
+propFrame.Visible = true
+contentFrames["الخصائص"] = propFrame
+
+local togglesList = {}
+
+-- سرعة المشي
+table.insert(togglesList, createToggle("سرعة", propFrame, function(on)
+	if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+		player.Character.Humanoid.WalkSpeed = on and 100 or 16
+	end
+end))
+
+-- نط لانهائي
+table.insert(togglesList, createToggle("نط لانهائي", propFrame, function(on)
+	if on then
+		if not propFrame.JumpConn then
+			propFrame.JumpConn = UserInputService.JumpRequest:Connect(function()
+				if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+					player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				end
+			end)
+		end
+	else
+		if propFrame.JumpConn then
+			propFrame.JumpConn:Disconnect()
+			propFrame.JumpConn = nil
+		end
+	end
+end))
+
+-- NoClip
+table.insert(togglesList, createToggle("NoClip", propFrame, function(on)
+	if on then
+		if not propFrame.NoClipConn then
+			propFrame.NoClipConn = RunService.Stepped:Connect(function()
+				if player.Character then
+					for _, part in pairs(player.Character:GetDescendants()) do
+						if part:IsA("BasePart") then
+							part.CanCollide = false
+						end
+					end
+				end
+			end)
+		end
+	else
+		if propFrame.NoClipConn then
+			propFrame.NoClipConn:Disconnect()
+			propFrame.NoClipConn = nil
+		end
+		if player.Character then
+			for _, part in pairs(player.Character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = true
+				end
+			end
+		end
+	end
+end))
+
+-- منع تزحلق
+table.insert(togglesList, createToggle("مانع تزحلق", propFrame, function(on)
+	if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+		player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, not on)
+	end
+end))
+
+-- إخفاء اللاعب
+table.insert(togglesList, createToggle("إخفاء اللاعب", propFrame, function(on)
+	if player.Character then
+		for _, v in pairs(player.Character:GetDescendants()) do
+			if v:IsA("BasePart") or v:IsA("Decal") then
+				v.Transparency = on and 1 or 0
+			end
+		end
+	end
+end))
+
+-- ضبط ارتفاع محتوى السكروول حسب عدد الأزرار
+propFrame.CanvasSize = UDim2.new(0, 0, 0, #togglesList * 40)
+
+-- هنا تقدر تضيف قسم ESP وقسم الحقوق إذا تبي
+
+-- قسم الحقوق
+local rightsFrame = Instance.new("Frame", contentHolder)
+rightsFrame.Size = UDim2.new(1, 0, 1, 0)
+rightsFrame.BackgroundTransparency = 1
+rightsFrame.Visible = false
+contentFrames["حقوق"] = rightsFrame
+
+local rightsLabel = Instance.new("TextLabel", rightsFrame)
+rightsLabel.Size = UDim2.new(1, 0, 0, 50)
+rightsLabel.Position = UDim2.new(0, 0, 0, 0)
+rightsLabel.BackgroundTransparency = 1
+rightsLabel.Text = "صُنع بواسطة: يزن"
+rightsLabel.TextColor3 = Color3.new(1, 1, 1)
+rightsLabel.Font = Enum.Font.GothamBold
+rightsLabel.TextScaled = true
+
+-- تفعيل أول قائمة بشكل افتراضي
+contentFrames["الخصائص"].Visible = true
+currentFrame = contentFrames["الخصائص"]
+menuButtons[1]:GetPropertyChangedSignal("Text"):Connect(function()
+	-- empty for safety, لو تبي تستخدم لاحقاً
+end)
